@@ -2,7 +2,8 @@ import os
 import asyncio
 from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
-from app.handlers import messages, containers
+from app import containers
+from app.handlers import messages
 from app.handlers.scheduler import metrics_refresher
 from logger import logger
 
