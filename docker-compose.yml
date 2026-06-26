@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  nexus_control:
+    build: .
+    container_name: nexus_control
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./database.db:/app/database.db
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_ID=${ADMIN_ID}

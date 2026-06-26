@@ -1,0 +1,4 @@
+aiogram
+docker
+psutil
+python-dotenv
