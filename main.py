@@ -28,15 +28,10 @@ async def main():
     session = None
     
     if PROXY_URL:
-        if PROXY_URL.startswith("socks"):
-            from aiohttp_socks import ProxyConnector
-            connector = ProxyConnector.from_url(PROXY_URL)
-            session = AiohttpSession(connector=connector)
-            logger.info("Используется SOCKS прокси.")
-        else:
-            session = AiohttpSession(proxy=PROXY_URL)
-            logger.info("Используется HTTP прокси.")
+        session = AiohttpSession(proxy=PROXY_URL)
+        logger.info("Прокси успешно применен.")
 
+    # Настройка хранилища (Redis или Memory)
     if REDIS_URL:
         storage = RedisStorage.from_url(REDIS_URL)
         log_redis_on_info()
