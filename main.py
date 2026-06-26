@@ -19,17 +19,17 @@ if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не задан в конфигурации .env!")
 
 def log_redis_on_info():
-    logger.info(f"✅ Успешно подключено к Redis по адресу: {REDIS_URL}")
+    logger.info(f"Redis подключен и используется для хранения состояния бота...")
 
 def log_redis_off_info():
-    logger.warning("⚠️ REDIS_URL не найден. Бот использует MemoryStorage (данные будут сброшены при рестарте).")
+    logger.warning("Redis не подключен. Используется MemoryStorage для хранения состояния бота...")
 
 async def main():
     session = None
     
     if PROXY_URL:
         session = AiohttpSession(proxy=PROXY_URL)
-        logger.info("Прокси успешно применен.")
+        logger.info("Прокси успешно применен...")
 
     if REDIS_URL:
         storage = RedisStorage.from_url(REDIS_URL)
@@ -50,6 +50,7 @@ async def main():
     try:
         await dp.start_polling(bot)
     finally:
+        logger.info("Остановка планировщика и закрытие сессии бота...")
         await bot.session.close()
 
 if __name__ == "__main__":
