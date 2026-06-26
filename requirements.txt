@@ -2,3 +2,5 @@ aiogram
 docker
 psutil
 python-dotenv
+aiohttp-socks
+redis
