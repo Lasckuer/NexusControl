@@ -1,5 +1,24 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
+ALIASES = {
+    "dhczomw": "🤖 Nexus Control", 
+    "flzrgsoj": "📝 Node Notes",
+    "ud552te": "💰 Personal Finance Bot",
+    "seaweedfs-admin": "🗄 SeaweedFS Admin",
+    "seaweedfs-master": "🗄 SeaweedFS Master"
+}
+
+def prettify_name(raw_name: str) -> str:
+    for key, nice_name in ALIASES.items():
+        if key in raw_name:
+            return nice_name
+            
+    parts = raw_name.split('-')
+    if len(parts) > 1 and len(parts[-1]) > 10:
+        return " ".join(parts[:-1]).title()
+        
+    return raw_name.replace('-', ' ').title()
+
 def get_main_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -12,7 +31,9 @@ def get_main_keyboard():
 def get_containers_keyboard(containers):
     buttons = []
     for c in containers:
-        buttons.append([InlineKeyboardButton(text=f"🔹 {c.name} [{c.status}]", callback_data=f"manage:{c.name}")])
+        nice_name = prettify_name(c.name)
+        # В callback_data оставляем оригинальное имя c.name, чтобы Docker его нашел
+        buttons.append([InlineKeyboardButton(text=f"🔹 {nice_name} [{c.status}]", callback_data=f"manage:{c.name}")])
     buttons.append([InlineKeyboardButton(text="🔄 Обновить список", callback_data="refresh_list")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

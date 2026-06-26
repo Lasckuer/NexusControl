@@ -71,7 +71,8 @@ class DockerService:
             elif action == "stop":
                 container.stop()
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Ошибка управления {name}: {e}")
             return False
 
     def get_logs(self, name):

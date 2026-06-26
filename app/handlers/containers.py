@@ -3,7 +3,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from dotenv import load_dotenv
 from app.services.docker_service import docker_service
-from app.keyboards.reply import get_container_actions_keyboard, get_containers_keyboard, get_stop_monitor_keyboard
+from app.keyboards.reply import get_container_actions_keyboard, get_containers_keyboard, get_stop_monitor_keyboard, prettify_name
 from app.database.db import db
 
 load_dotenv()
@@ -22,7 +22,10 @@ async def refresh_containers_list(callback: CallbackQuery):
 async def manage_container(callback: CallbackQuery):
     db.delete_monitor(callback.message.chat.id)
     c_name = callback.data.split(":")[1]
-    await callback.message.edit_text(f"Управление контейнером: **{c_name}**", parse_mode="Markdown", reply_markup=get_container_actions_keyboard(c_name))
+    
+    nice_name = prettify_name(c_name)
+    
+    await callback.message.edit_text(f"Управление контейнером: **{nice_name}**", parse_mode="Markdown", reply_markup=get_container_actions_keyboard(c_name))
     await callback.answer()
 
 @router.callback_query(F.data.startswith("action:"), F.from_user.id == ADMIN_ID)

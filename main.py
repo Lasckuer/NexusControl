@@ -31,7 +31,6 @@ async def main():
         session = AiohttpSession(proxy=PROXY_URL)
         logger.info("Прокси успешно применен.")
 
-    # Настройка хранилища (Redis или Memory)
     if REDIS_URL:
         storage = RedisStorage.from_url(REDIS_URL)
         log_redis_on_info()
