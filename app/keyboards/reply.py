@@ -1,11 +1,12 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 ALIASES = {
-    "dhczomw": "🤖 Nexus Control", 
-    "flzrgsoj": "📝 Node Notes",
-    "ud552te": "💰 Personal Finance Bot",
-    "seaweedfs-admin": "🗄 SeaweedFS Admin",
-    "seaweedfs-master": "🗄 SeaweedFS Master"
+    "dhczomw": "Nexus Control", 
+    "flzrgsoj": "Node Notes",
+    "ud552te": "Personal Finance Bot",
+    "seaweedfs-admin": "SeaweedFS Admin",
+    "seaweedfs-master": "SeaweedFS Master",
+    "N6Welm1": "Redis",
 }
 
 def prettify_name(raw_name: str) -> str:
