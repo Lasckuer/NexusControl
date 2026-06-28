@@ -6,7 +6,8 @@ ALIASES = {
     "ud552te": "Personal Finance Bot",
     "seaweedfs-admin": "SeaweedFS Admin",
     "seaweedfs-master": "SeaweedFS Master",
-    "n6welm1": "Redis"
+    "n6welm1": "Redis",
+    "Ogufwalvk": "Synapse"
 }
 
 def prettify_name(raw_name: str) -> str:
