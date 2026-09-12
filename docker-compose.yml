@@ -4,10 +4,15 @@ services:
   nexus_control:
     build: .
     container_name: nexus_control
-    restart: always
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./database.db:/app/database.db
+      - ./bot_log.log:/app/bot_log.log
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_IDS=${ADMIN_IDS}
       - ADMIN_ID=${ADMIN_ID}
+      - REDIS_URL=${REDIS_URL}
+      - PROXY_URL=${PROXY_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}

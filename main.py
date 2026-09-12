@@ -1,61 +1,90 @@
-import os
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
-from dotenv import load_dotenv
-from app.handlers import messages, containers
-from app.handlers.scheduler import metrics_refresher, container_crash_monitor, system_resource_monitor
+
+from app.config import config
+from app.middlewares.auth import AdminAuthMiddleware
+from app.handlers import common, messages, containers
+from app.handlers.common import setup_bot_commands
+from app.handlers.scheduler import (
+    metrics_refresher,
+    container_crash_monitor,
+    system_resource_monitor,
+)
+from app.database.db import db
 from logger import logger
 
-load_dotenv()
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-PROXY_URL = os.getenv("PROXY_URL")
-REDIS_URL = os.getenv("REDIS_URL")
-ADMIN_ID = int(os.getenv("ADMIN_ID", 0))
-
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не задан в конфигурации .env!")
-
-def log_redis_on_info():
-    logger.info(f"Redis подключен и используется для хранения состояния бота...")
-
-def log_redis_off_info():
-    logger.warning("Redis не подключен. Используется MemoryStorage для хранения состояния бота...")
-
 async def main():
-    session = None
-    
-    if PROXY_URL:
-        session = AiohttpSession(proxy=PROXY_URL)
-        logger.info("Прокси успешно применен...")
+    config.validate()
 
-    if REDIS_URL:
-        storage = RedisStorage.from_url(REDIS_URL)
-        log_redis_on_info()
+    session = None
+    if config.proxy_url:
+        session = AiohttpSession(proxy=config.proxy_url)
+        logger.info(f"Прокси успешно подключен ({config.proxy_url}).")
+
+    if config.redis_url:
+        try:
+            storage = RedisStorage.from_url(config.redis_url)
+            logger.info("Подключено хранилище состояний Redis.")
+        except Exception as e:
+            logger.error(f"Не удалось подключиться к Redis: {e}. Переключение на MemoryStorage.")
+            storage = MemoryStorage()
     else:
         storage = MemoryStorage()
-        log_redis_off_info()
+        logger.info("Используется MemoryStorage для FSM состояний.")
 
-    bot = Bot(token=BOT_TOKEN, session=session)
+    bot = Bot(token=config.bot_token, session=session)
     dp = Dispatcher(storage=storage)
 
+    # Регистрация middleware авторизации администраторов
+    auth_middleware = AdminAuthMiddleware()
+    dp.message.outer_middleware(auth_middleware)
+    dp.callback_query.outer_middleware(auth_middleware)
+
+    # Подключение роутеров
+    dp.include_router(common.router)
     dp.include_router(messages.router)
     dp.include_router(containers.router)
 
-    asyncio.create_task(metrics_refresher(bot, interval=4))
-    if ADMIN_ID:
-        asyncio.create_task(container_crash_monitor(bot, ADMIN_ID, interval=5))
-        asyncio.create_task(system_resource_monitor(bot, ADMIN_ID, interval=30))
+    # Инициализация базы данных и команд бота
+    await db.init_db()
+    await setup_bot_commands(bot)
 
-    logger.info("Бот NexusControl успешно запущен!")
+    # Фоновые процессы
+    background_tasks: list[asyncio.Task] = []
+    background_tasks.append(
+        asyncio.create_task(metrics_refresher(bot, interval=config.refresh_interval))
+    )
+
+    if config.admin_ids:
+        logger.info(f"Активные администраторы: {list(config.admin_ids)}")
+        background_tasks.append(
+            asyncio.create_task(container_crash_monitor(bot, interval=config.crash_monitor_interval))
+        )
+        background_tasks.append(
+            asyncio.create_task(system_resource_monitor(bot, interval=config.resource_monitor_interval))
+        )
+    else:
+        logger.warning("ADMIN_IDS не задан! Алерты о падениях контейнеров и железа отключены.")
+
+    logger.info("Бот NexusControl успешно запущен и готов к работе!")
+
     try:
         await dp.start_polling(bot)
     finally:
-        logger.info("Остановка планировщика и закрытие сессии бота...")
+        logger.info("Инициирована остановка бота NexusControl...")
+        for task in background_tasks:
+            task.cancel()
+        
+        await asyncio.gather(*background_tasks, return_exceptions=True)
+        await db.close()
         await bot.session.close()
+        logger.info("NexusControl корректно завершил работу.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        pass
